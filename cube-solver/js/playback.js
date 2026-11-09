@@ -100,8 +100,8 @@ const SHOWCASE=[
   {yaw:Math.PI/2,pitch:.38,label:"Right side"},
   {yaw:Math.PI,pitch:.38,label:"Back side"},
   {yaw:Math.PI*1.5,pitch:.38,label:"Left side"},
-  {yaw:Math.PI,pitch:1.05,label:"Top side"},
-  {yaw:0,pitch:-.62,label:"Bottom side"}
+  {yaw:Math.PI,pitch:1.52,label:"Top side"},
+  {yaw:0,pitch:-1.52,label:"Bottom side"}
 ];
 const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
 function showcase(n){

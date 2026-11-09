@@ -1,7 +1,7 @@
 /* Studio environment, presentation camera, recording and video export workflow. */
 
 // ---------- studio: a styled room with a round table; the puzzle floats above it ----------
-const sc=$("sc"),r2=new THREE.WebGLRenderer({canvas:sc,antialias:true,preserveDrawingBuffer:false}),cam2=new THREE.PerspectiveCamera(30,1,.1,200),ST=new THREE.Group(),room=new THREE.Group(),WD=36;
+const sc=$("sc"),r2=new THREE.WebGLRenderer({canvas:sc,antialias:true,preserveDrawingBuffer:true}),cam2=new THREE.PerspectiveCamera(30,1,.1,200),ST=new THREE.Group(),room=new THREE.Group(),WD=36;
 r2.setClearColor(0x0a0f1c);ST.visible=false;ST.add(room);scene.add(ST);
 const std=o=>new THREE.MeshStandardMaterial(o);
 function ctex(w,h,f,rx,ry){const c=document.createElement("canvas");c.width=w;c.height=h;f(c.getContext("2d"),w,h);const t=new THREE.CanvasTexture(c);t.anisotropy=4;if(rx){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry)}return t}

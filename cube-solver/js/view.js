@@ -16,7 +16,7 @@ function dlg(t,m){hideToast();$("dt").textContent=t;$("dm").textContent=m;$("pv"
 $("ok").onclick=()=>{$("pv").pause();$("scrim").classList.remove("on")};
 
 // scene
-const cv=$("cv"),renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+const cv=$("cv"),renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true,preserveDrawingBuffer:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(30,1,.1,100),cube=new THREE.Group(),pivot=new THREE.Group();
 cube.add(pivot);scene.add(cube);
