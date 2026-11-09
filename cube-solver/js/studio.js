@@ -237,13 +237,14 @@ new ResizeObserver(sizeStudio).observe($("studio"));
 function renderStudio(){const a=cam2.aspect,now=performance.now(),e=Math.min(1,(now-rec.t0)/2200),ez=e*e*(3-2*e),el0=Math.max(.02,Math.min(1.1,.18+so.pitch));
   let D=Math.max(15/a,20)*so.zoom*(1+.12*(1-ez)),el=el0,lx=0,ly=-.3,sway=0;
   if(recording){const t=(now-rec.t0)/1000,n=sol?sol.length:1,pr=rec.ph==="solve"?Math.min(1,ix/n):rec.ph==="end"?1:0;
-    rec.kick=Math.max(0,(rec.kick||0)-.045);
+    rec.kickTarget=Math.max(0,(rec.kickTarget||0)-.045);
+    rec.kick=(rec.kick||0)+(rec.kickTarget-(rec.kick||0))*.12;
     // shot design: wide opener, slow push-in while solving, gentle pull-back on the reveal
     const dz={hold:1.08-.05*Math.min(1,t/6),solve:1.0-.22*pr,end:.78+.24*Math.min(1,(now-(rec.endT||(rec.endT=now)))/3000)}[rec.ph]||1;
     if(rec.ph!=="end")rec.endT=0;
     D*=dz*(1-.018*rec.kick);el=el0+.1*Math.sin(t*.32)+(rec.ph==="solve"?.08*pr:0)+(rec.ph==="end"?.06:0);
     lx=.35*Math.sin(t*.21);ly=-.3+.5*Math.sin(t*.27)*(rec.ph==="solve"?1:.4);sway=1}
-  const sx=sway?.035*Math.sin(now*.0011)+.02*Math.sin(now*.0027):0,sy=sway?.03*Math.sin(now*.0013+1):0;
+  const sx=recording?0:(sway?.035*Math.sin(now*.0011)+.02*Math.sin(now*.0027):0),sy=recording?0:(sway?.03*Math.sin(now*.0013+1):0);
   cam2.position.set(lx+sx*D,ly+D*Math.sin(el)+sy*D,D*Math.cos(el));cam2.lookAt(lx,ly+(sway?cube.position.y*.12:0),0);room.rotation.y=so.yaw;blob.scale.setScalar(1-(cube.position.y-1.5)*.2);blob.material.opacity=.55;
   ST.visible=true;r2.render(scene,cam2);ST.visible=false}
 async function openStudio(){if(!sol)return;playing=false;while(busy||anim)await sleep(30);col=start.slice();paint();ix=0;hl();
@@ -269,7 +270,7 @@ async function recordRun(){
   const chunks=[];mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
   const done=new Promise(r=>mr.onstop=r);
   const sp0=speed,fin=start.slice();sol.forEach(m=>turn(pz,fin,m));
-  col=start.slice();paint();ix=0;stopReq=false;recording=true;setRecUI(true);
+  col=start.slice();paint();ix=0;stopReq=false;recording=true;sudokuOrientationLocked=!!pz.sudoku;setRecUI(true);
   markShadow();Object.assign(rec,{ph:"hold",tag:"Your puzzle",label:"Your puzzle",sub:"A full turn so you can match every side",prog:0,yaw:-.65,tt:0,last:0,t0:performance.now(),studio:studioOn});
   if(studioOn){r2.setPixelRatio(1);r2.setSize(vw,vh,false);cam2.aspect=vw/vh;cam2.updateProjectionMatrix();sc.style.visibility="hidden";$("sbar").classList.add("hid");$("studio").classList.add("recing");
     rc.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#0a0f1c";$("studio").insertBefore(rc,$("sbar"))}
@@ -277,8 +278,8 @@ async function recordRun(){
   mr.start(250);
   $("cap").textContent="Your puzzle";await sleep(6200);hl();
   if(!stopReq){rec.ph="solve";rec.tag="Solving";await play()}
-  if(!stopReq){rec.ph="end";rec.tag="Solved";audChime();await sleep(3600)}
-  audStop();mr.stop();recording=false;rec.ph=studioOn?"prev":"";setRecUI(false);await done;
+  if(!stopReq){rec.ph="end";rec.tag="Solved";rec.endT=0;rec.endSide=-1;audChime();await sleep(8500)}
+  audStop();mr.stop();recording=false;sudokuOrientationLocked=false;rec.ph=studioOn?"prev":"";setRecUI(false);await done;
   if(studioOn){rc.remove();sc.style.visibility="";$("sbar").classList.remove("hid");$("studio").classList.remove("recing");sizeStudio()}
   else{zoom=pz.iso;cube.quaternion.copy(Q3());updateCam()}
   const type=mr.mimeType||mime||"video/webm";vidBlob=new Blob(chunks,{type});

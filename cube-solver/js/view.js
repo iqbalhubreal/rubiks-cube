@@ -2,7 +2,7 @@
 
 // ---------- UI state ----------
 const GRAY="#7b7b78";
-let pz=null,puzzleId="",col=[],start=null,sel=0,sol=null,ix=0,playing=false,busy=false,speed=1.5,mode="paint",anim=false,zoom=1,view3d=false,ver=0,recording=false,stopReq=false,studioOn=false;
+let pz=null,puzzleId="",col=[],start=null,sel=0,sol=null,ix=0,playing=false,busy=false,speed=1.5,mode="paint",anim=false,zoom=1,view3d=false,ver=0,recording=false,stopReq=false,studioOn=false,sudokuOrientationLocked=false;
 let stickers=[],cubies=[],tiles=[],sws=[],base=null;
 const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const PLAY='<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',PAUSE='<svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
@@ -71,7 +71,7 @@ function fit(){ver++;const s=$("stage"),w=s.clientWidth,h=s.clientHeight;if(!w||
 new ResizeObserver(fit).observe($("stage"));
 // Sudoku digits: keep each visible face's numbers upright on screen by turning them in quarter steps about the sticker's own normal
 const UPC=[[0,0,-1],[0,1,0],[0,1,0],[0,0,1],[0,1,0],[0,1,0]],HP=Math.PI/2;
-function orient(){if(!pz||!pz.sudoku||!stickers.length)return;const q=cube.quaternion;if(!pz.roll)pz.roll=[0,0,0,0,0,0];
+function orient(){if(sudokuOrientationLocked||!pz||!pz.sudoku||!stickers.length)return;const q=cube.quaternion;if(!pz.roll)pz.roll=[0,0,0,0,0,0];
   for(let f=0;f<6;f++){const nw=new THREE.Vector3(...pz.fn[f]).applyQuaternion(q);if(nw.z<.1)continue;
     const uw=new THREE.Vector3(...UPC[f]).applyQuaternion(q),want=-Math.atan2(-uw.x,uw.y);let e=want-pz.roll[f]*HP;e=Math.atan2(Math.sin(e),Math.cos(e));
     if(Math.abs(e)>.9||pz.rollNew!==ver0){pz.roll[f]+=Math.round(e/HP);const z=pz.roll[f]*HP,a=f*pz.per;for(let j=0;j<pz.per;j++)stickers[a+j].rotation.z=z}}

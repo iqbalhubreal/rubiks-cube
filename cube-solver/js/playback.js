@@ -20,7 +20,7 @@ async function play(){
   if(playing){playing=false;hl();return}
   if(ix>=sol.length){col=start.slice();paint();ix=0}
   playing=true;hl();
-  while(playing&&sol&&ix<sol.length){if(recording)rec.kick=1;await run(sol[ix]);if(!sol)return;audTick();ix++;hl();if(ix>=sol.length&&!recording)audChime();if(playing&&ix<sol.length)await sleep(1100/speed)}
+  while(playing&&sol&&ix<sol.length){if(recording)rec.kickTarget=1;await run(sol[ix]);if(!sol)return;audTick();ix++;hl();if(ix>=sol.length&&!recording)audChime();if(playing&&ix<sol.length)await sleep(1100/speed)}
   playing=false;hl();
 }
 async function step(d){if(busy||!sol)return;playing=false;
@@ -90,17 +90,42 @@ function audChime(){if(recording){if(AUD.ac&&AUD.on)chimeOn(AUD.ac,AUD.m,AUD.dl)
 function audStop(){const ac=AUD.ac;if(!ac)return;AUD.on=false;clearInterval(AUD.timer);try{AUD.m.gain.cancelScheduledValues(ac.currentTime);AUD.m.gain.setValueAtTime(AUD.m.gain.value,ac.currentTime);AUD.m.gain.linearRampToValueAtTime(0,ac.currentTime+.8)}catch(e){}setTimeout(()=>{try{ac.close()}catch(e){}AUD.ac=null},1000)}
 // recorder: composites the 3D canvas, background and step caption into a 2D canvas and records it
 const rc=document.createElement("canvas");let vidBlob=null,vidName="";
-const rec={ph:"",tag:"",label:"",sub:"",prog:0,yaw:-.65,tt:0,last:0,t0:0};
+const rec={ph:"",tag:"",label:"",sub:"",prog:0,yaw:-.65,pitch:.45,tt:0,last:0,t0:0,endT:0,endSide:-1,endFromYaw:0,endFromPitch:.45};
 const LOGO=["#f4f4f0","#2563eb","#ff8a1f","#27a844","#ffd400","#d7263d","#ff8a1f","#f4f4f0","#27a844"],RF="Roboto,system-ui,sans-serif";
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
-// camera rig: the puzzle orbits so every side (top, bottom, back, left, right) comes into view
+// camera rig: the puzzle orbits smoothly during the solve and eases through a
+// deliberate six-side showcase after the final move.
+const SHOWCASE=[
+  {yaw:0,pitch:.38,label:"Front side"},
+  {yaw:Math.PI/2,pitch:.38,label:"Right side"},
+  {yaw:Math.PI,pitch:.38,label:"Back side"},
+  {yaw:Math.PI*1.5,pitch:.38,label:"Left side"},
+  {yaw:Math.PI,pitch:1.05,label:"Top side"},
+  {yaw:0,pitch:-.62,label:"Bottom side"}
+];
+const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
+function showcase(n){
+  const sideMs=1200,holdMs=280,elapsed=Math.max(0,n-(rec.endT||n));
+  const side=Math.min(SHOWCASE.length-1,Math.floor(elapsed/sideMs));
+  if(side!==rec.endSide){
+    rec.endSide=side;rec.endFromYaw=rec.yaw;rec.endFromPitch=rec.pitch;
+  }
+  const target=SHOWCASE[side],local=Math.min(1,(elapsed-side*sideMs)/(sideMs-holdMs));
+  const e=local<.5?2*local*local:1-Math.pow(-2*local+2,2)/2;
+  rec.yaw=rec.endFromYaw+angleDelta(rec.endFromYaw,target.yaw)*e;
+  rec.pitch=rec.endFromPitch+(target.pitch-rec.endFromPitch)*e;
+  rec.tag=target.label;
+}
 function rig(){const n=performance.now(),dt=Math.min(.1,(n-(rec.last||n))/1000);rec.last=n;rec.tt+=dt;
+  if(rec.ph==="end"){if(!rec.endT){rec.endT=n;rec.endSide=-1;rec.endFromYaw=rec.yaw;rec.endFromPitch=rec.pitch}showcase(n)}
+  else{
   const tg=({intro:.45,scr:.75,hold:1.15,solve:.34,end:1.1,prev:.5}[rec.ph]||.4)*(rec.studio&&rec.ph!=="hold"?.45:1);rec.rate=(rec.rate||0)+(tg-(rec.rate||0))*Math.min(1,dt*2.5);rec.yaw+=rec.rate*dt;
-  if(rec.studio){if(recording)so.yaw+=({intro:.1,scr:.16,hold:.28,solve:.12,end:.22}[rec.ph]||.1)*dt;else if(!sptr.size&&n-so.touched>3500)so.yaw+=.06*dt;
-    cube.position.y=1.5+.12*Math.sin(rec.tt*.9);cube.quaternion.setFromEuler(new THREE.Euler(0,rec.yaw,0,"YXZ"));return}
+  }
+  if(rec.studio){if(recording&&rec.ph!=="end")so.yaw+=({intro:.1,scr:.16,hold:.28,solve:.12,end:.22}[rec.ph]||.1)*dt;else if(!recording&&!sptr.size&&n-so.touched>3500)so.yaw+=.06*dt;
+    cube.position.y=1.5+(rec.ph==="end"?0:.12*Math.sin(rec.tt*.9));cube.quaternion.setFromEuler(new THREE.Euler(rec.ph==="end"?rec.pitch:0,rec.yaw,0,"YXZ"));return}
   const e=Math.min(1,(n-rec.t0)/2000),ez=e*e*(3-2*e);
   zoom=pz.iso*(1+.3*(1-ez));updateCam();
-  cube.quaternion.setFromEuler(new THREE.Euler(.45+.9*Math.sin(rec.tt*.5),rec.yaw,0))}
+  cube.quaternion.setFromEuler(new THREE.Euler(rec.ph==="end"?rec.pitch:.45+.9*Math.sin(rec.tt*.5),rec.yaw,0))}
 function drawFrame(){const w=rc.width,h=rc.height,g=rc.getContext("2d"),m=Math.min(w,h),hd=Math.round(m*.13),ft=Math.round(m*.25),pad=Math.round(m*.05),
     S=Math.min(w,h-hd-ft),cy=Math.round(hd+(h-hd-ft-S)/2),mid=hd+(h-hd-ft)/2,Y="#ffd400",done=rec.ph==="end";
   const bg=g.createRadialGradient(w/2,mid,m*.05,w/2,h/2,Math.max(w,h)*.75);bg.addColorStop(0,"#2a3d70");bg.addColorStop(.55,"#142040");bg.addColorStop(1,"#080c18");
