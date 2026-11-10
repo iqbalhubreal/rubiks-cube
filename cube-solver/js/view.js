@@ -71,10 +71,11 @@ function fit(){ver++;const s=$("stage"),w=s.clientWidth,h=s.clientHeight;if(!w||
 new ResizeObserver(fit).observe($("stage"));
 // Sudoku digits: keep each visible face's numbers upright on screen by turning them in quarter steps about the sticker's own normal
 const UPC=[[0,0,-1],[0,1,0],[0,1,0],[0,0,1],[0,1,0],[0,1,0]],HP=Math.PI/2;
-function orient(){if(sudokuOrientationLocked||!pz||!pz.sudoku||!stickers.length)return;const q=cube.quaternion;if(!pz.roll)pz.roll=[0,0,0,0,0,0];
-  for(let f=0;f<6;f++){const nw=new THREE.Vector3(...pz.fn[f]).applyQuaternion(q);if(nw.z<.1)continue;
-    const uw=new THREE.Vector3(...UPC[f]).applyQuaternion(q),want=-Math.atan2(-uw.x,uw.y);let e=want-pz.roll[f]*HP;e=Math.atan2(Math.sin(e),Math.cos(e));
-    if(Math.abs(e)>.9||pz.rollNew!==ver0){pz.roll[f]+=Math.round(e/HP);const z=pz.roll[f]*HP,a=f*pz.per;for(let j=0;j<pz.per;j++)stickers[a+j].rotation.z=z}}
+function orient(all=false){if((sudokuOrientationLocked&&!all)||!pz||!pz.sudoku||!stickers.length)return;const q=cube.quaternion;if(!pz.roll)pz.roll=[0,0,0,0,0,0];
+  for(let f=0;f<6;f++){const nw=new THREE.Vector3(...pz.fn[f]).applyQuaternion(q);if(!all&&nw.z<.1)continue;
+    const uw=new THREE.Vector3(...UPC[f]).applyQuaternion(q),want=-Math.atan2(-uw.x,uw.y);
+    if(all){pz.roll[f]=Math.round(want/HP)}else{let e=want-pz.roll[f]*HP;e=Math.atan2(Math.sin(e),Math.cos(e));if(Math.abs(e)>.9)pz.roll[f]+=Math.round(e/HP)}
+    const z=pz.roll[f]*HP,a=f*pz.per;for(let j=0;j<pz.per;j++)stickers[a+j].rotation.z=z}
   pz.rollNew=ver0}
 let ver0=0;
 let lastSig="";

@@ -29,7 +29,8 @@ async function step(d){if(busy||!sol)return;playing=false;
 async function restart(){if(!sol)return;playing=false;while(busy)await sleep(30);await sleep(30);col=start.slice();paint();ix=0;hl();play()}
 function Q3(){return new THREE.Quaternion().setFromEuler(new THREE.Euler(.5,-.65,0))}
 function set3dUI(){const b=$("d3");b.hidden=mode!=="paint";b.classList.toggle("on",view3d);b.textContent=view3d?"2D":"3D"}
-function setMode(m){mode=m;set3dUI();$("pc").hidden=m!=="paint";$("vc").hidden=m!=="solve"}
+function setMode(m){mode=m;set3dUI();$("pc").hidden=m!=="paint";$("vc").hidden=m!=="solve";
+  if(pz&&pz.sudoku){if(m==="solve"){sudokuOrientationLocked=false;orient(true);sudokuOrientationLocked=true}else if(!recording)sudokuOrientationLocked=false}}
 async function edit(){if(anim)return;if(recording)stopReq=true;playing=false;while(busy)await sleep(30);await sleep(30);
   if(start)col=start.slice();paint();sol=null;ix=0;setMode("paint");hideToast();base=new THREE.Quaternion();sync();await goTo(view3d?Q3():home(),view3d?pz.iso:1);if(pz.snap)base=home();sync()}
 
@@ -53,7 +54,7 @@ async function solve(rec){
   if(!solvedNow(chk)){dlg("Something went wrong","The solution didn’t check out. Please try again.");return}
   if(!r.moves.length){toast("This puzzle is already solved.");return}
   start=s0;sol=r.moves;ix=0;setMode("solve");renderMoves();hideToast();
-  await goTo(Q3(),pz.iso);if(rec==="studio")openStudio();else if(rec)recordRun();else play()}
+  await goTo(Q3(),pz.iso);if(pz.sudoku){sudokuOrientationLocked=false;orient(true);sudokuOrientationLocked=true}if(rec==="studio")openStudio();else if(rec)recordRun();else play()}
 
 
 // ---------- sound: generated music bed + move ticks, mixed into the recording ----------
