@@ -254,18 +254,25 @@ function pickRec(m){$("rq").classList.remove("on");
   if(m==="studio"){if(mode==="paint")solve("studio");else openStudio();return}
   if(mode==="paint")solve(true);else recordRun()}
 function setRecUI(on){document.querySelectorAll(".recbtn").forEach(b=>b.innerHTML=on?'<i class="sq"></i>Stop':'<i class="dot"></i>Record')}
+function syncRecordingAudioUI(){
+  const music=$("rqaMusic"),sfx=$("rqaSfx");
+  if(music){music.setAttribute("aria-pressed",recordMusic);music.textContent="Music: "+(recordMusic?"On":"Off")}
+  if(sfx){sfx.setAttribute("aria-pressed",recordSfx);sfx.textContent="Sound effects: "+(recordSfx?"On":"Off")}
+}
+$("rqaMusic").onclick=()=>{recordMusic=!recordMusic;syncRecordingAudioUI()};
+$("rqaSfx").onclick=()=>{recordSfx=!recordSfx;syncRecordingAudioUI()};
 function record(){
   if(recording){stopReq=true;playing=false;return}
   if(typeof MediaRecorder==="undefined"){dlg("Recording not supported","This browser can’t record video from the page. Try a recent version of Chrome, Edge or Safari.");return}
   if(studioOn){recordRun();return}
-  $("rq").classList.add("on")}
+  syncRecordingAudioUI();$("rq").classList.add("on")}
 async function recordRun(){
   if(recording||!sol)return;
   playing=false;while(busy||anim)await sleep(30);
   const [bw0,bh0]=$("ar").value.split("x").map(Number),qs=+$("qa").value||1,vw=Math.round(bw0*qs/2)*2,vh=Math.round(bh0*qs/2)*2;rc.width=vw;rc.height=vh;
-  const wantSnd=$("sn").value==="1",stream=rc.captureStream(30);let at=null;if(wantSnd)at=audStart();if(at)stream.addTrack(at);
+  const wantSnd=recordMusic||recordSfx,stream=rc.captureStream(30);let at=null;if(wantSnd)at=audStart();if(at)stream.addTrack(at);
   const mimes=at?["video/mp4;codecs=avc1,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"]:["video/mp4;codecs=avc1","video/mp4","video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"];
-  const mime=mimes.find(t=>MediaRecorder.isTypeSupported(t)),vbr=Math.round(vw*vh*30*.14),opts={videoBitsPerSecond:Math.min(20e6,Math.max(6e6,vbr)),audioBitsPerSecond:160000};if(mime)opts.mimeType=mime;
+  const mime=mimes.find(t=>MediaRecorder.isTypeSupported(t)),vbr=Math.round(vw*vh*30*.24),opts={videoBitsPerSecond:Math.min(32e6,Math.max(8e6,vbr)),audioBitsPerSecond:192000};if(mime)opts.mimeType=mime;
   let mr;try{mr=new MediaRecorder(stream,opts)}catch(e){audStop();dlg("Recording failed","Couldn’t start the recorder in this browser.");return}
   const chunks=[];mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
   const done=new Promise(r=>mr.onstop=r);

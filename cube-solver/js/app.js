@@ -45,7 +45,7 @@ PUZZLES.forEach(grp=>{const h=document.createElement("h3");h.textContent=grp.g;n
     b.onclick=()=>{closeNav();if(p.id!==puzzleId)setPuzzle(p.id)};nav.appendChild(b);navBtns[p.id]=b})});
 const arh=document.createElement("h3");arh.textContent="Recording";nav.appendChild(arh);
 const arow=document.createElement("div");arow.id="arrow";
-arow.innerHTML='<span>Video shape</span><select id="ar" aria-label="Video aspect ratio"><option value="720x1280">9:16 · Reels / Stories</option><option value="720x900">4:5 · Feed</option><option value="720x720">1:1 · Square</option><option value="1280x720">16:9 · Landscape</option></select><span>Quality</span><select id="qa" aria-label="Video quality"><option value="1.5">HD · 1080p (sharper)</option><option value="1">Standard · 720p (faster)</option></select><span>Sound</span><select id="sn" aria-label="Sound"><option value="1">Music + move sounds</option><option value="0">Silent</option></select>';
+arow.innerHTML='<span>Video shape</span><select id="ar" aria-label="Video aspect ratio"><option value="720x1280">9:16 · Reels / Stories</option><option value="720x900">4:5 · Feed</option><option value="720x720">1:1 · Square</option><option value="1280x720">16:9 · Landscape</option></select><span>Quality</span><select id="qa" aria-label="Video quality"><option value="1.5">Full HD · 1080p (higher quality)</option><option value="1">Standard · 720p (faster)</option></select>';
 nav.appendChild(arow);
 const nfo=document.createElement("p");nfo.className="nf";nfo.textContent="Paint the stickers to match your puzzle, or tap Random, then press Solve.";nav.appendChild(nfo);
 navBtns.cube.after($("szrow"));

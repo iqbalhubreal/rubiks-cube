@@ -58,10 +58,13 @@ async function solve(rec){
 
 
 // ---------- sound: generated music bed + move ticks, mixed into the recording ----------
-const AUD={ac:null,dst:null,m:null,dl:null,tm:0,beat:0,on:false,lastNote:0};
+let recordMusic=true,recordSfx=true;
+const AUD={ac:null,dst:null,m:null,music:null,sfx:null,dl:null,tm:0,beat:0,on:false,lastNote:0};
 function audStart(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;const ac=AUD.ac=new A();ac.resume&&ac.resume();
   AUD.dst=ac.createMediaStreamDestination();const m=AUD.m=ac.createGain();m.gain.value=0;
   const lp=ac.createBiquadFilter();lp.type="lowpass";lp.frequency.value=2600;m.connect(lp);lp.connect(AUD.dst);
+  AUD.music=ac.createGain();AUD.music.gain.value=recordMusic?1:0;AUD.music.connect(m);
+  AUD.sfx=ac.createGain();AUD.sfx.gain.value=recordSfx?1:0;AUD.sfx.connect(m);
   const dl=ac.createDelay(1);dl.delayTime.value=.375;const fb=ac.createGain();fb.gain.value=.38;const wet=ac.createGain();wet.gain.value=.34;
   dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(lp);AUD.dl=dl;
   m.gain.setValueAtTime(0,ac.currentTime);m.gain.linearRampToValueAtTime(.9,ac.currentTime+2.5);
@@ -70,11 +73,11 @@ const CH=[[57,60,64],[53,57,60],[48,55,64],[55,59,62]],hz=n=>440*Math.pow(2,(n-6
 function audSched(){const ac=AUD.ac;if(!ac||!AUD.on)return;const sp=60/84/2;
   while(AUD.tm<ac.currentTime+.6){const t=AUD.tm,b=AUD.beat,ch=CH[(b>>3)%4];
     if(b%8===0){ch.concat([ch[0]-12]).forEach((n,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=i===3?"sine":"triangle";o.frequency.value=hz(n);o.detune.value=(i-1)*4;
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(i===3?.2:.075,t+1.1);g.gain.linearRampToValueAtTime(0,t+sp*8+.5);o.connect(g);g.connect(AUD.m);o.start(t);o.stop(t+sp*8+.6)})}
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(i===3?.2:.075,t+1.1);g.gain.linearRampToValueAtTime(0,t+sp*8+.5);o.connect(g);g.connect(AUD.music);o.start(t);o.stop(t+sp*8+.6)})}
     if(b%2===0||b%8===3){const seq=[0,1,2,1,2,1,0,2],n=ch[seq[b%8]]+12+(b%16>=8?12:0),o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=hz(n);
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.13,t+.012);g.gain.exponentialRampToValueAtTime(.0008,t+.7);o.connect(g);g.connect(AUD.m);g.connect(AUD.dl);o.start(t);o.stop(t+.8)}
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.13,t+.012);g.gain.exponentialRampToValueAtTime(.0008,t+.7);o.connect(g);g.connect(AUD.music);if(recordMusic)g.connect(AUD.dl);o.start(t);o.stop(t+.8)}
     if(b%4===0){const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(48,t+.14);
-      g.gain.setValueAtTime(.2,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g);g.connect(AUD.m);o.start(t);o.stop(t+.35)}
+      g.gain.setValueAtTime(.2,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g);g.connect(AUD.music);o.start(t);o.stop(t+.35)}
     AUD.tm+=sp;AUD.beat++}}
 function tickOn(ac,out){const t=ac.currentTime,len=ac.sampleRate*.07|0,buf=ac.createBuffer(1,len,ac.sampleRate),d=buf.getChannelData(0);
   for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);
@@ -84,10 +87,10 @@ function tickOn(ac,out){const t=ac.currentTime,len=ac.sampleRate*.07|0,buf=ac.cr
 // live sound (outside recording): one click per move, plus a chime when the puzzle is solved
 const SFX={ac:null};
 function sfxAc(){if($("sn")&&$("sn").value==="0")return null;try{if(!SFX.ac)SFX.ac=new (window.AudioContext||window.webkitAudioContext)();if(SFX.ac.state==="suspended")SFX.ac.resume();return SFX.ac}catch(e){return null}}
-function audTick(){if(recording){if(AUD.ac&&AUD.on)tickOn(AUD.ac,AUD.m);return}const ac=sfxAc();if(ac){const g=ac.createGain();g.gain.value=.8;g.connect(ac.destination);tickOn(ac,g)}}
+function audTick(){if(recording){if(recordSfx&&AUD.ac&&AUD.on)tickOn(AUD.ac,AUD.sfx);return}const ac=sfxAc();if(ac){const g=ac.createGain();g.gain.value=.8;g.connect(ac.destination);tickOn(ac,g)}}
 function chimeOn(ac,out,dly){const t=ac.currentTime;[69,73,76,81].forEach((n,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.value=hz(n);
   g.gain.setValueAtTime(0,t+i*.11);g.gain.linearRampToValueAtTime(.2,t+i*.11+.02);g.gain.exponentialRampToValueAtTime(.001,t+i*.11+1.9);o.connect(g);g.connect(out);if(dly)g.connect(dly);o.start(t+i*.11);o.stop(t+i*.11+2)})}
-function audChime(){if(recording){if(AUD.ac&&AUD.on)chimeOn(AUD.ac,AUD.m,AUD.dl);return}const ac=sfxAc();if(ac){const g=ac.createGain();g.gain.value=.7;g.connect(ac.destination);chimeOn(ac,g)}}
+function audChime(){if(recording){if(recordSfx&&AUD.ac&&AUD.on)chimeOn(AUD.ac,AUD.sfx,AUD.dl);return}const ac=sfxAc();if(ac){const g=ac.createGain();g.gain.value=.7;g.connect(ac.destination);chimeOn(ac,g)}}
 function audStop(){const ac=AUD.ac;if(!ac)return;AUD.on=false;clearInterval(AUD.timer);try{AUD.m.gain.cancelScheduledValues(ac.currentTime);AUD.m.gain.setValueAtTime(AUD.m.gain.value,ac.currentTime);AUD.m.gain.linearRampToValueAtTime(0,ac.currentTime+.8)}catch(e){}setTimeout(()=>{try{ac.close()}catch(e){}AUD.ac=null},1000)}
 // recorder: composites the 3D canvas, background and step caption into a 2D canvas and records it
 const rc=document.createElement("canvas");let vidBlob=null,vidName="";
