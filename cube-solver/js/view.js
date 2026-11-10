@@ -77,6 +77,7 @@ function orient(all=false){if((sudokuOrientationLocked&&!all)||!pz||!pz.sudoku||
     if(all){pz.roll[f]=Math.round(want/HP)}else{let e=want-pz.roll[f]*HP;e=Math.atan2(Math.sin(e),Math.cos(e));if(Math.abs(e)>.9)pz.roll[f]+=Math.round(e/HP)}
     const z=pz.roll[f]*HP,a=f*pz.per;for(let j=0;j<pz.per;j++)stickers[a+j].rotation.z=z}
   pz.rollNew=ver0}
+function resetSudokuOrientation(){if(!pz||!pz.sudoku||!stickers.length)return;pz.roll=[0,0,0,0,0,0];stickers.forEach(s=>{s.rotation.z=0})}
 let ver0=0;
 let lastSig="";
 (function loop(){if(recording||studioOn)rig();const q=cube.quaternion,p=pivot.quaternion,sig=[q.x,q.y,q.z,q.w,p.x,p.y,p.z,p.w,cam.position.z,cube.scale.x,ver].join();
